@@ -2,7 +2,6 @@ import bpy
 import json
 from random import randint
 from random import uniform
-from random import choice
        
 
 def create():
@@ -13,10 +12,10 @@ def create():
       
     bpy.ops.scene.new()
     
-    for nft_number in range(0, 1):
+    for nft_number in range(0, 51):
         
         # Add assets
-        number_of_cubes = generate_cubes(randint(30, 70))
+        generate_cubes(randint(30, 70))
         create_light()
         create_camera()
         create_background()
@@ -25,28 +24,24 @@ def create():
         animate_cubes()
         
         # Add materials
-        selected_materials = assign_material_to_cubes()
+        assign_material_to_cubes()
         assign_material_to_background()
         
         # Render
-        #render(nft_number)
-        
-        # Write metadata to JSON file
-        #write_metadata(nft_number, number_of_cubes, selected_materials)
+        render(nft_number)
         
         # Remove assets
-        #remove_all()
+        clean()
         
     return
         
         
 
-
 def generate_cubes(n):
     """
     Generate n cubes
     :param n: string, required
-    :return: int
+    :return: None
     """
     
     # Create cube collection
@@ -69,7 +64,7 @@ def generate_cubes(n):
         # Add cube to collection
         bpy.data.collections['Cubes'].objects.link(cube_object)
         
-    return n
+    return
         
         
         
@@ -117,7 +112,7 @@ def create_camera():
     camera = bpy.data.cameras.new('Camera')
     camera.lens = 50
     camera_object = bpy.data.objects.new('Camera', camera)
-    camera_object.location = (25.256, -23.796, 17.184)
+    camera_object.location = (19.348, -18.227, 13.144)
     camera_object.rotation_euler = (1.109, 0, 0.8149)
     bpy.context.collection.objects.link(camera_object)
     bpy.context.scene.camera = camera_object
@@ -155,32 +150,22 @@ def create_background():
 def assign_material_to_cubes():
     """
     Create material if is None and assign it to cubes
-    :return: [<bpy_struct, Material("")>]
+    :return: None
     """
     
     materials = bpy.data.materials
     
-    # Create materials
     r = uniform(0, 1)
     g = uniform(0, 1)
-    for i in range(0, 1):
-        material = materials.get('CubeMaterial.{}'.format(i))
-        if material is None:
-            material = materials.new(name='CubeMaterial.{}'.format(i))
-            
-            b = uniform(0, 1)
-            
-            material.diffuse_color = (r, g, b, 0.4)
-            
-        
+    
     cubes = bpy.data.collections['Cubes'].all_objects
-    materials_selected = []
-    for cube in cubes:
-        material = choice(materials)
+    for index, cube in enumerate(cubes):
+        material = materials.new(name='CubeColor.{}'.format(index))
+        b = uniform(0, 1) 
+        material.diffuse_color = (r, g, b, 1)
         cube.data.materials.append(material)
-        materials_selected.append(material)
         
-    return materials_selected
+    return 
         
         
         
@@ -211,52 +196,32 @@ def render(nft_number):
     """
     
     path = '/Users/dennis/Developer/open-source-cubes/output/nft-{}/'.format(nft_number)
-    bpy.data.scenes['Scene.001'].render.resolution_x = 480
-    bpy.data.scenes['Scene.001'].render.resolution_y = 480
+    bpy.data.scenes['Scene.001'].render.resolution_x = 600
+    bpy.data.scenes['Scene.001'].render.resolution_y = 600
     bpy.data.scenes['Scene.001'].render.filepath = path
     bpy.data.scenes['Scene.001'].render.image_settings.file_format = 'PNG'
-    bpy.data.scenes['Scene.001'].render.image_settings.compression = 50
+    bpy.data.scenes['Scene.001'].render.image_settings.compression = 20
     bpy.data.scenes['Scene.001'].frame_end = 48
     bpy.ops.render.render(animation=True, write_still=True, scene='Scene.001')
     
     return
-    
-    
-    
-def write_metadata(nft_number, number_of_cubes, selected_materials):
-    """
-    Create a JSON file with some data about the NFT
-    :param nft_number: int, required
-    :param number_of_cubes: int, required
-    :param selected_materials: [<bpy_struct, Material("")>], required
-    """
-    
-    path = '/Users/dennis/Developer/open-source-cubes/output/nft-{}/'.format(nft_number)
-    data = {'nft_number': nft_number, 'number_of_cubes': number_of_cubes, 'colors': []}
-    
-    for selected_material in selected_materials:
-        r = selected_material.diffuse_color[0]
-        g = selected_material.diffuse_color[1]
-        b = selected_material.diffuse_color[2]
-        data['colors'].append((r, g, b))
-    
-    with open('{}metadata.json'.format(path), 'w') as f:
-        json.dump(data, f)
-        
-    return
         
     
-            
-            
-            
-def remove_all():
+                    
+def clean():
     """
-    Remove all objects
+    Clean scene
     :return: None
     """
     
+    # Delete assets in scene
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete()
+    
+    # Remove materials if exists
+    materials = bpy.data.materials
+    for material in materials:
+        materials.remove(material)
     
     return
         
