@@ -13,19 +13,10 @@ def create():
     bpy.ops.scene.new()
     
     for nft_number in range(0, 51):
-        
-        # Add assets
-        generate_cubes(randint(30, 70))
+        generate_cubes()
         create_light()
         create_camera()
         create_background()
-        
-        # Create animation
-        animate_cubes()
-        
-        # Add materials
-        assign_material_to_cubes()
-        assign_material_to_background()
         
         # Render
         render(nft_number)
@@ -37,10 +28,9 @@ def create():
         
         
 
-def generate_cubes(n):
+def generate_cubes():
     """
     Generate n cubes
-    :param n: string, required
     :return: None
     """
     
@@ -48,61 +38,40 @@ def generate_cubes(n):
     cube_collection = bpy.context.blend_data.collections.new(name='Cubes')
     bpy.context.collection.children.link(cube_collection)
     
-    x_bound = uniform(0, 5)
-    y_bound = uniform(0, 5)
-    z_bound = uniform(0, 5)
+    # Set options for material
+    materials = bpy.data.materials
+    r = uniform(0, 1)
+    g = uniform(0, 1)
     
-    for _ in range(0, n):
-        x = uniform(-x_bound, x_bound)
-        y = uniform(-y_bound, y_bound)
-        z = uniform(-z_bound, z_bound)
+    for _ in range(0, 50):
+        x = uniform(-uniform(0, 5), uniform(0, 5))
+        y = uniform(-uniform(0, 5), uniform(0, 5))
+        z = uniform(-uniform(0, 5), uniform(0, 5))
         bpy.ops.mesh.primitive_cube_add(location=(x, y, z))
         
         # Get current cube object
         cube_object = bpy.context.object
+        cube_object.scale = (uniform(0.2, 1), uniform(0.2, 1), uniform(0.2, 1))
         
         # Add cube to collection
         bpy.data.collections['Cubes'].objects.link(cube_object)
         
-    return
+        # Assign material
+        b = uniform(0, 1) 
+        material = materials.new(name='CubeColor')
+        material.diffuse_color = (r, g, b, 1)
+        cube_object.data.materials.append(material)
         
+        # Animate cube
+        cube_object.keyframe_insert(data_path='rotation_euler', frame=1)
+        cube_object.rotation_euler[2] = 6
+        cube_object.keyframe_insert(data_path='rotation_euler', frame=24)
         
-        
-def animate_cubes():
-    """
-    Create rotation animation
-    :return: None
-    """
-    
-    cubes = bpy.data.collections['Cubes'].all_objects
-    
-    # Select all cubes
-    for cube in cubes:
-        cube.keyframe_insert(data_path='rotation_euler', frame=1)
-        cube.rotation_euler[2] = 6
-        cube.keyframe_insert(data_path='rotation_euler', frame=24)
         
     return
-        
-        
-        
-def create_light():
-    """
-    Create light
-    :return: None
-    """
-    
-    light = bpy.data.lights.new(name='Light', type='POINT')
-    light.energy = 10000
-    light_object = bpy.data.objects.new(name='Light', object_data=light)
-    bpy.context.collection.objects.link(light_object)
-    light_object.location = (20.6245, -23.59, 8.8291)
-    light_object.rotation_euler = (0.9887, -0.7407, 0.7169)
-    
-    return
-    
-    
-    
+
+
+
 def create_camera():
     """
     Create camera
@@ -118,12 +87,30 @@ def create_camera():
     bpy.context.scene.camera = camera_object
     
     return
+        
+        
+        
+def create_light():
+    """
+    Create light
+    :return: None
+    """
+    
+    light = bpy.data.lights.new(name='Light', type='POINT')
+    light.energy = 10000
+    light.use_shadow = False
+    light_object = bpy.data.objects.new(name='Light', object_data=light)
+    bpy.context.collection.objects.link(light_object)
+    light_object.location = (20.6245, -23.59, 14.4891 )
+    light_object.rotation_euler = (0.9887, -0.7407, 0.7169)
+    
+    return
     
     
     
 def create_background():
     """
-    Create room
+    Create background plane
     :return: None
     """
     
@@ -131,77 +118,39 @@ def create_background():
     background_collection = bpy.context.blend_data.collections.new(name='Background')
     bpy.context.collection.children.link(background_collection)
     
-    bpy.ops.mesh.primitive_plane_add(size=60, location=(-8, 0, -17))
+    bpy.ops.mesh.primitive_plane_add(
+        size=60, 
+        location=(-10.603, 9.8974, -10), 
+        rotation=(0, 1.57, -0.7853)
+    )
+    
     plane_object = bpy.context.object
-    bpy.data.collections['Background'].objects.link(plane_object)
     
-    bpy.ops.mesh.primitive_plane_add(size=60, location=(-8, 28.196, -17), rotation=(1.57, 0, 0))
-    plane_object = bpy.context.object
-    bpy.data.collections['Background'].objects.link(plane_object)
-    
-    bpy.ops.mesh.primitive_plane_add(size=60, location=(-38.013, 0, -17), rotation=(0, 1.57, 0))
-    plane_object = bpy.context.object
-    bpy.data.collections['Background'].objects.link(plane_object)
-    
-    return
-    
-    
-    
-def assign_material_to_cubes():
-    """
-    Create material if is None and assign it to cubes
-    :return: None
-    """
-    
+    # Set color
     materials = bpy.data.materials
-    
-    r = uniform(0, 1)
-    g = uniform(0, 1)
-    
-    cubes = bpy.data.collections['Cubes'].all_objects
-    for index, cube in enumerate(cubes):
-        material = materials.new(name='CubeColor.{}'.format(index))
-        b = uniform(0, 1) 
-        material.diffuse_color = (r, g, b, 1)
-        cube.data.materials.append(material)
-        
-    return 
-        
-        
-        
-def assign_material_to_background():
-    """
-    Create material if is None and assign it to background
-    :return: None
-    """
-    
-    material = bpy.data.materials.get('BackgroundMaterial')
-    if material is None:
-        material = bpy.data.materials.new(name='BackgroundMaterial')
-        
+    material = materials.new(name='BackgroundColor')
     material.diffuse_color = (0, 0, 0, 1)
-    planes = bpy.data.collections['Background'].all_objects
-    for plane in planes:
-        plane.data.materials.append(material)
-        
-    return
+    plane_object.data.materials.append(material)
     
+    bpy.data.collections['Background'].objects.link(plane_object)
+    
+    return
     
     
     
 def render(nft_number):
     """
-    Export animation as image sequence
+    Set export settings and export image
     :return: None
     """
     
-    path = '/Users/dennis/Developer/open-source-cubes/output/nft-{}/'.format(nft_number)
-    bpy.data.scenes['Scene.001'].render.resolution_x = 600
-    bpy.data.scenes['Scene.001'].render.resolution_y = 600
+    path = '/Users/dennis/Developer/the-cube-project/src/output/nft-{}/'.format(nft_number)
+    bpy.data.scenes['Scene.001'].frame_end = 30
+    bpy.data.scenes['Scene.001'].render.resolution_x = 500
+    bpy.data.scenes['Scene.001'].render.resolution_y = 500
     bpy.data.scenes['Scene.001'].render.filepath = path
     bpy.data.scenes['Scene.001'].render.image_settings.file_format = 'PNG'
     bpy.data.scenes['Scene.001'].render.image_settings.compression = 20
-    bpy.data.scenes['Scene.001'].frame_end = 48
     bpy.ops.render.render(animation=True, write_still=True, scene='Scene.001')
     
     return

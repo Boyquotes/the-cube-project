@@ -1,1 +1,1 @@
-# open-source-cubes
+# the-cube-project
