@@ -1,1 +1,1 @@
-# the-cube-project
+# the-cube-project [DEPRECATED]
